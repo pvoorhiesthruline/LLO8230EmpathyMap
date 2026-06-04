@@ -106,15 +106,16 @@ function EmpathyMapV3({ mode = "example" }) {
 
   return (
     <div ref={ref} className="ws" style={v3.root}>
-      <WS3.ExportButton getTarget={() => ref.current} pageClass="print-slide" />
-
       <div style={v3.head}>
         <div style={v3.headL}>
           <EC3.Eyebrow />
           <h1 style={v3.title}>Empathy Map &mdash; Orbit.</h1>
           <p style={v3.intro}>{EC3.EMPATHY_INTRO}</p>
         </div>
-        <EC3.SampleToggle touched={state.touched} onExample={loadExample} onClear={clearAll} />
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <EC3.SampleToggle touched={state.touched} onExample={loadExample} onClear={clearAll} />
+          <WS3.ExportMenu getTarget={() => ref.current} name={`empathy-map-orbit-${mode}`} />
+        </div>
       </div>
 
       <div style={v3.orbit}>

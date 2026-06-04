@@ -96,7 +96,6 @@ function EmpathyMapV2({ mode = "example" }) {
 
   return (
     <div ref={ref} className="ws" style={v2e.root}>
-      <WS2e.ExportButton getTarget={() => ref.current} pageClass="print-slide" />
 
       {/* Dark identity panel */}
       <aside style={v2e.panel}>
@@ -133,7 +132,10 @@ function EmpathyMapV2({ mode = "example" }) {
             <h1 style={v2e.title}>Empathy Map.</h1>
             <p style={v2e.intro}>{EC2.EMPATHY_INTRO}</p>
           </div>
-          <EC2.SampleToggle touched={state.touched} onExample={loadExample} onClear={clearAll} />
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <EC2.SampleToggle touched={state.touched} onExample={loadExample} onClear={clearAll} />
+            <WS2e.ExportMenu getTarget={() => ref.current} name={`empathy-map-portrait-${mode}`} />
+          </div>
         </div>
 
         <div style={v2e.grid}>

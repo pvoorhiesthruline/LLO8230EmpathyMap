@@ -105,8 +105,6 @@ function EmpathyMapV1({ mode = "example" }) {
 
   return (
     <div ref={ref} className="ws" style={v1.root}>
-      <WS1.ExportButton getTarget={() => ref.current} pageClass="print-slide" />
-
       <div style={v1.head}>
         <div style={v1.headL}>
           <EC1.Eyebrow />
@@ -114,7 +112,10 @@ function EmpathyMapV1({ mode = "example" }) {
           <p style={v1.intro}>{EC1.EMPATHY_INTRO}</p>
         </div>
         <div style={v1.headR}>
-          <EC1.SampleToggle touched={state.touched} onExample={loadExample} onClear={clearAll} />
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <EC1.SampleToggle touched={state.touched} onExample={loadExample} onClear={clearAll} />
+            <WS1.ExportMenu getTarget={() => ref.current} name={`stakeholder-empathy-map-${mode}`} />
+          </div>
           {!state.touched && <EC1.SampleRibbon />}
         </div>
       </div>

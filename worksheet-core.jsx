@@ -191,10 +191,8 @@ function ExportButton({ getTarget, pageClass = "print-slide", label = "Export PD
     if (!target) return;
     target.classList.add("print-target");
     document.body.classList.add(pageClass);
-    // Defer print to next frame so the class hits the stylesheet
     requestAnimationFrame(() => {
       window.print();
-      // Clean up after the print dialog closes
       setTimeout(() => {
         target.classList.remove("print-target");
         document.body.classList.remove(pageClass);
@@ -209,6 +207,154 @@ function ExportButton({ getTarget, pageClass = "print-slide", label = "Export PD
       </svg>
       {label}
     </button>
+  );
+}
+
+// ── Multi-format export menu (PDF · PNG · PowerPoint) ─────────────────
+// Captures the target element at native 1920×1080 regardless of viewport
+// zoom. Hides .export-hide chrome (toggle buttons, ribbon, this menu) during
+// capture so they don't appear in the output.
+function ExportMenu({ getTarget, name = "empathy-map" }) {
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(null);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const off = (e) => { if (!wrapRef.current || !wrapRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("pointerdown", off, true);
+    return () => document.removeEventListener("pointerdown", off, true);
+  }, [open]);
+
+  const capture = useCallback(async (scale) => {
+    const el = getTarget();
+    if (!el) throw new Error("no target");
+    await document.fonts.ready;
+    // Reset slide-frame transform so html2canvas sees native 1920×1080 layout
+    const frame = document.getElementById("slide-frame");
+    const savedTransform = frame ? frame.style.transform : undefined;
+    if (frame) frame.style.transform = "translate(-50%,-50%) scale(1)";
+    // Hide UI chrome
+    const chrome = Array.from(el.querySelectorAll(".export-hide"));
+    chrome.forEach(n => n.style.setProperty("visibility", "hidden", "important"));
+    let canvas;
+    try {
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+      canvas = await html2canvas(el, {
+        scale,
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: "#FBFAF7",
+        logging: false,
+      });
+    } finally {
+      chrome.forEach(n => n.style.removeProperty("visibility"));
+      if (frame && savedTransform !== undefined) frame.style.transform = savedTransform;
+    }
+    return canvas;
+  }, [getTarget]);
+
+  const run = useCallback(async (type) => {
+    setBusy(type);
+    setOpen(false);
+    try {
+      const scale = type === "png" ? 3 : 2;
+      const canvas = await capture(scale);
+      const cssW = canvas.width / scale;   // 1920
+      const cssH = canvas.height / scale;  // 1080
+
+      if (type === "png") {
+        canvas.toBlob(blob => {
+          const a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = name + ".png";
+          a.click();
+          setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        }, "image/png");
+
+      } else if (type === "pdf") {
+        const { jsPDF } = window.jspdf;
+        // 1920×1080 CSS px → pt at 96 dpi (1pt = 96/72 px)
+        const ptW = cssW * 72 / 96;  // 1440 pt
+        const ptH = cssH * 72 / 96;  // 810 pt
+        const pdf = new jsPDF({ orientation: "landscape", unit: "pt", format: [ptW, ptH], compress: true });
+        pdf.addImage(canvas.toDataURL("image/jpeg", 0.93), "JPEG", 0, 0, ptW, ptH);
+        pdf.save(name + ".pdf");
+
+      } else if (type === "ppt") {
+        const pptx = new PptxGenJS();
+        // Standard widescreen: 13.33" × 7.5"
+        pptx.defineLayout({ name: "WIDE", width: 13.33, height: 7.5 });
+        pptx.layout = "WIDE";
+        const slide = pptx.addSlide();
+        slide.addImage({ data: canvas.toDataURL("image/png"), x: 0, y: 0, w: 13.33, h: 7.5 });
+        await pptx.writeFile({ fileName: name + ".pptx" });
+      }
+    } catch (err) {
+      console.error("[ExportMenu]", err);
+      alert("Export failed — " + err.message);
+    } finally {
+      setBusy(null);
+    }
+  }, [capture, name]);
+
+  const triggerStyle = {
+    display: "inline-flex", alignItems: "center", gap: 7,
+    padding: "7px 13px", borderRadius: 999,
+    fontFamily: "var(--sans)", fontSize: 12.5, fontWeight: 600, letterSpacing: "0.01em",
+    border: "1.5px solid var(--vu-rule)",
+    background: "var(--vu-black)", color: "var(--vu-cream)",
+    cursor: busy ? "wait" : "pointer",
+    transition: "opacity .14s",
+    opacity: busy ? 0.65 : 1,
+    whiteSpace: "nowrap",
+  };
+
+  const itemStyle = {
+    display: "block", width: "100%", padding: "8px 14px",
+    background: "transparent", border: "none", borderRadius: 7,
+    fontFamily: "var(--sans)", cursor: "pointer", textAlign: "left",
+    transition: "background .1s",
+  };
+
+  const items = [
+    { type: "pdf", label: "PDF",        sub: "actual file, 1 page" },
+    { type: "png", label: "PNG image",  sub: "high-res · 3×" },
+    { type: "ppt", label: "PowerPoint", sub: "widescreen slide" },
+  ];
+
+  return (
+    <div ref={wrapRef} className="export-hide" style={{ position: "relative", display: "inline-flex" }}>
+      <button style={triggerStyle} disabled={!!busy} onClick={() => !busy && setOpen(o => !o)}>
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M7 1v8M4.5 6.5 7 9l2.5-2.5"/><path d="M2 12h10"/>
+        </svg>
+        {busy ? "Exporting…" : "Export"}
+        {!busy && (
+          <svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <path d="M2 3.5l3 3 3-3"/>
+          </svg>
+        )}
+      </button>
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 60,
+          background: "#fff", border: "1px solid var(--vu-rule)", borderRadius: 10,
+          padding: 4, minWidth: 160,
+          boxShadow: "0 8px 24px rgba(28,28,28,0.14)",
+        }}>
+          {items.map(({ type, label, sub }) => (
+            <button key={type} style={itemStyle}
+              onMouseEnter={e => e.currentTarget.style.background = "var(--vu-cream)"}
+              onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              onClick={() => run(type)}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--vu-black)", lineHeight: 1.2 }}>{label}</div>
+              <div style={{ fontSize: 11, color: "var(--vu-muted)", marginTop: 2 }}>{sub}</div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -231,7 +377,7 @@ window.WSCore = {
   PURPOSE_CATEGORIES,
   useWorksheetState,
   Editable, Chip, Blank, CategoryGroup, EditableChipList,
-  ExportButton,
+  ExportButton, ExportMenu,
   OPERATING_PRINCIPLES_HTML,
   INTRO_COPY,
 };
