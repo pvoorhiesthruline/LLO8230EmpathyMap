@@ -92,7 +92,6 @@ function EmpathyMapV2({ mode = "example" }) {
   const startBlank = mode === "blank";
   const { state, set, setList, loadExample, clearAll } = EC2.useStakeholderState(`v2-${mode}`, { startBlank });
   const ref = useRef2e(null);
-  const F = (props) => <WS2e.Editable {...props} />;
 
   return (
     <div ref={ref} className="ws" style={v2e.root}>
@@ -103,15 +102,15 @@ function EmpathyMapV2({ mode = "example" }) {
         <EC2.Avatar name={state.name} size={150} variant="dark" />
         <div>
           <div style={v2e.pKicker}>The Stakeholder</div>
-          <F value={state.name} onChange={(v) => set("name", v)} placeholder="Name the stakeholder"
+          <WS2e.Editable value={state.name} onChange={(v) => set("name", v)} placeholder="Name the stakeholder"
              className="id-field" style={{ ...v2e.pName, marginTop: 10 }} />
-          <F value={state.role} onChange={(v) => set("role", v)} placeholder="Role & stake in the program"
+          <WS2e.Editable value={state.role} onChange={(v) => set("role", v)} placeholder="Role & stake in the program"
              className="id-field" tag="div" style={v2e.pRole} />
         </div>
         <div style={v2e.pStakeWrap}>
           <span style={v2e.pStakeLabel}>In their words</span>
           <span style={v2e.pMark}>&ldquo;</span>
-          <F value={state.stake} onChange={(v) => set("stake", v)} multiline tag="div"
+          <WS2e.Editable value={state.stake} onChange={(v) => set("stake", v)} multiline tag="div"
              className="id-field" placeholder="A short quote that captures their stake" style={v2e.pStake} />
         </div>
         <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 14 }}>

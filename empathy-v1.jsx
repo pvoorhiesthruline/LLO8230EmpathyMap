@@ -101,7 +101,6 @@ function EmpathyMapV1({ mode = "example" }) {
   const startBlank = mode === "blank";
   const { state, set, setList, loadExample, clearAll } = EC1.useStakeholderState(`v1-${mode}`, { startBlank });
   const ref = useRef1(null);
-  const F = (props) => <WS1.Editable {...props} />;
 
   return (
     <div ref={ref} className="ws" style={v1.root}>
@@ -130,9 +129,9 @@ function EmpathyMapV1({ mode = "example" }) {
         <div style={v1.medallion}>
           <EC1.Avatar name={state.name} size={64} />
           <div>
-            <F value={state.name} onChange={(v) => set("name", v)} placeholder="Stakeholder"
+            <WS1.Editable value={state.name} onChange={(v) => set("name", v)} placeholder="Stakeholder"
                className="id-field" style={v1.medName} />
-            <F value={state.role} onChange={(v) => set("role", v)} placeholder="Role / stake"
+            <WS1.Editable value={state.role} onChange={(v) => set("role", v)} placeholder="Role / stake"
                className="id-field" tag="div" style={v1.medRole} />
           </div>
         </div>

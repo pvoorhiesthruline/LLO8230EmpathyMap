@@ -102,7 +102,6 @@ function EmpathyMapV3({ mode = "example" }) {
   const startBlank = mode === "blank";
   const { state, set, setList, loadExample, clearAll } = EC3.useStakeholderState(`v3-${mode}`, { startBlank });
   const ref = useRef3(null);
-  const F = (props) => <WS3.Editable {...props} />;
 
   return (
     <div ref={ref} className="ws" style={v3.root}>
@@ -134,9 +133,9 @@ function EmpathyMapV3({ mode = "example" }) {
             <EC3.Avatar name={state.name} size={70} variant="dark" />
             <div>
               <div style={v3.medKicker}>The Stakeholder</div>
-              <F value={state.name} onChange={(v) => set("name", v)} placeholder="Stakeholder"
+              <WS3.Editable value={state.name} onChange={(v) => set("name", v)} placeholder="Stakeholder"
                  className="id-field" style={{ ...v3.medName, marginTop: 5 }} />
-              <F value={state.role} onChange={(v) => set("role", v)} placeholder="Role / stake"
+              <WS3.Editable value={state.role} onChange={(v) => set("role", v)} placeholder="Role / stake"
                  className="id-field" tag="div" style={v3.medRole} />
             </div>
           </div>
